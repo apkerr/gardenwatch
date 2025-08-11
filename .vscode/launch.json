@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["add", "seed"],
+            "args": ["show", "seed"],
             "cwd": "${workspaceFolder}"
         },
         {
