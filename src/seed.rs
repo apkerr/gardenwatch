@@ -6,9 +6,7 @@ pub mod seed {
     use itertools::Itertools;
     use rand::Rng;
 
-    use crate::data::data;
-
-    pub type Seed = v1::Seed;
+    use crate::{data::data, seed::seed::v1::Seed};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub enum PlantType {
@@ -102,6 +100,14 @@ pub mod seed {
 
     pub fn get() {
 
+    }
+
+    pub fn get_by_id(id: i32) -> Result<Option<Seed>, Error> {
+        println!("Getting seed with id {id}");
+        let db = data::open()?;
+
+        let r = db.r_transaction()?;
+        Ok(r.get().primary(id)?)
     }
 
     pub fn get_all() -> Result<Vec<Seed>, Error> {

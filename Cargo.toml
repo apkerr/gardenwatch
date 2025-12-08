@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5.42"
+clap = { version = "4.5.53", features = ["derive"] }
 itertools = "0.14.0"
 native_db = "0.8.2"
 native_model = "0.4.20"

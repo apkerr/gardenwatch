@@ -1,67 +1,104 @@
-use clap::{Arg, Command, Error};
+use core::panic;
+
+use clap::{Args, Error, Parser, Subcommand, ValueEnum};
+use serde::de::value::SeqAccessDeserializer;
 
 pub mod seed;
 pub mod data;
+pub mod help;
+
+
+#[derive(Parser, Debug)]
+#[command(name = "gardenwatch")]
+#[command(about = "Garden planning tool", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    // initialize database
+    Init,
+    // create a new item
+    #[command(arg_required_else_help = true)]
+    New(ItemArgs),
+    // get an item
+    #[command(arg_required_else_help = true)]
+    Get(ItemArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(flatten_help = true)]
+struct ItemArgs {
+    #[arg(value_enum)]
+    entry: Items,
+}
+
+#[derive(Debug, Clone)]
+enum Items {
+    Seed,
+}
+impl ValueEnum for Items {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Items::Seed]
+    }
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            Items::Seed => Some("seed".into())
+        }
+    }
+    
+    fn from_str(input: &str, ignore_case: bool) -> Result<Self, String> {
+        Self::value_variants()
+            .iter()
+            .find(|v| {
+                v.to_possible_value()
+                    .expect("ValueEnum::value_variants contains only values with a corresponding ValueEnum::to_possible_value")
+                    .matches(input, ignore_case)
+            })
+            .cloned()
+            .ok_or_else(|| std::format!("invalid variant: {input}"))
+    }
+}
 
 
 fn main() {
-    let matches = Command::new("gardenwatch")
-    .version("0.1.0")
-    .author("Andrew Kerr <apkerr@yahoo.com>")
-    .about("Garden planning tool")
-    .subcommand(
-        Command::new("init")
-        .about("Initialize GardenWatch database")
-    )
-    .subcommand(
-        Command::new("new")
-            .about("Create a new entry")
-            .arg(Arg::new("item")
-                .required(true)
-            ),
-    )
-    .subcommand(
-        Command::new("show")
-        .about("Show database entries")
-            .arg(Arg::new("item")
-                .required(true)
-            ),
-    )
-    .get_matches();
-
-    let cmd: &str = matches.subcommand_name().unwrap_or_default();
-
-    match cmd {
-        "init" => {
+    let args = Cli::parse();
+    
+    match args.command {
+        Commands::Init => {
             let result = init();
-            if result.is_err() {
-                panic!("Error creating database!");
+            match result {
+                Ok(_) => println!("Database initialized"),
+                Err(e) => panic!("{}", e)
             }
         }
-        "new" => {
-            let item = matches.subcommand_matches("new").unwrap().get_one::<String>("item").unwrap().as_str();
-            match item {
-                "seed" => seed::seed::create_new().unwrap(),
-                _ => panic!("Could not create new {item}")
+        Commands::New(args) => {
+            println!("New {:?}", args.entry);
+            match args.entry {
+                Items::Seed => {
+                    let result = seed::seed::create_new();
+                    let _ = result.inspect_err(|e| eprintln!("failed to create new {}", e));
+                }
             }
-        },
-        "show" => {
-            let item = matches.subcommand_matches("show").unwrap().get_one::<String>("item").unwrap().as_str();
-            match item {
-                "seed" => {
+
+        }
+        Commands::Get(args) => {
+            println!("Get {:?}", args.entry);
+            match args.entry {
+                Items::Seed => {
                     let seeds = seed::seed::get_all();
-                    if seeds.is_err() {
-                        panic!("Could not fetch all seeds");
+                    match seeds {
+                        Ok(s) => {
+                            println!("{:#?}", s)
+                        }
+                        Err(e) => panic!("{}", e)
                     }
-                    println!("{:#?}", seeds.unwrap());
-                },
-                _ => println!("Could not create new {item}")
+                }
             }
         }
-        _ => panic!("Unsupported command!")
     }
-
-
 }
 
 fn init() -> Result<(), native_db::db_type::Error> {
