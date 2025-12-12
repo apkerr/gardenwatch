@@ -31,9 +31,25 @@ enum Commands {
 #[derive(Debug, Args)]
 #[command(flatten_help = true)]
 struct ItemArgs {
+    #[command(subcommand)]
+    sub_command: Option<ItemCommands>,
     #[arg(value_enum)]
     entry: Items,
 }
+
+#[derive(Debug, Subcommand)]
+enum ItemCommands {
+    All,
+    Id(ItemCommandArgs),
+    Type(ItemCommandArgs),
+}
+
+#[derive(Debug, Args)]
+struct ItemCommandArgs {
+    #[arg(required = true)]
+    arg: String
+}
+
 
 #[derive(Debug, Clone)]
 enum Items {
@@ -63,14 +79,17 @@ impl ValueEnum for Items {
 }
 
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     
     match args.command {
         Commands::Init => {
             let result = init();
             match result {
-                Ok(_) => println!("Database initialized"),
+                Ok(_) => { 
+                    println!("Database initialized"); 
+                    Ok(()) 
+                }
                 Err(e) => panic!("{}", e)
             }
         }
@@ -80,7 +99,9 @@ fn main() {
                 Items::Seed => {
                     let result = seed::seed::create_new();
                     let _ = result.inspect_err(|e| eprintln!("failed to create new {}", e));
+                    Ok(())
                 }
+                _ => Ok(())
             }
 
         }
@@ -88,13 +109,50 @@ fn main() {
             println!("Get {:?}", args.entry);
             match args.entry {
                 Items::Seed => {
-                    let seeds = seed::seed::get_all();
-                    match seeds {
-                        Ok(s) => {
-                            println!("{:#?}", s)
+                    let seed_cmd = args.sub_command.unwrap_or(ItemCommands::All);
+                    match seed_cmd {
+                        ItemCommands::All => {
+                            let seeds = seed::seed::get_all();
+                            match seeds {
+                                Ok(s) => {
+                                    println!("{:#?}", s);
+                                    Ok(())
+                                }
+                                Err(e) => panic!("{}", e)
+                            }
                         }
-                        Err(e) => panic!("{}", e)
+                        ItemCommands::Id(cmd_arg) => {
+                            let id = cmd_arg.arg.parse::<i32>()?;
+                            let seed = seed::seed::get_by_id(id)?;
+                            match seed {
+                                None => { 
+                                    println!("Could not find seed with id {id}");
+                                    Ok(())
+                                }
+                                Some(s) => {
+                                    println!("{:#?}", s);
+                                    Ok(())
+                                } 
+                            }
+
+                        }
+                        ItemCommands::Type(cmd_arg) => {
+                            let s_type = cmd_arg.arg;
+                            let seeds = seed::seed::get_by_type(&s_type)?;
+                            match seeds {
+                                None => { 
+                                    println!("Could not find seeds with type {}", &s_type);
+                                    Ok(())
+                                }
+                                Some(s) => {
+                                    println!("{:#?}", s);
+                                    Ok(())
+                                } 
+                            }
+
+                        }
                     }
+
                 }
             }
         }

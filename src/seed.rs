@@ -1,25 +1,36 @@
 pub mod seed {
+    use core::fmt;
+    use std::{any::Any, str::FromStr};
+
     use inquire::{InquireError, Select, Text};
     use native_db::{native_db, Builder, ToKey, db_type::Error};
     use native_model::{native_model, Model};
     use serde::{Deserialize, Serialize};
     use itertools::Itertools;
     use rand::Rng;
+    use strum::{EnumString, VariantNames};
 
     use crate::{data::data, seed::seed::v1::Seed};
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, EnumString, VariantNames)]
+    #[strum(serialize_all = "mixed_case")]
     pub enum PlantType {
         Fruit,
         Vegetable,
         Flower,
         Tree,
     }
+    impl fmt::Display for PlantType {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
 
     pub mod v1 {
         use super::*;
         
-        #[derive(Serialize, Deserialize, Debug)]
+        #[derive(Serialize, Deserialize, Debug, Clone)]
         #[native_model(id = 1, version = 1)]
         #[native_db]
         pub struct Seed {
@@ -108,6 +119,19 @@ pub mod seed {
 
         let r = db.r_transaction()?;
         Ok(r.get().primary(id)?)
+    }
+
+    pub fn get_by_type(s_type: &str) -> Result<Option<Vec<Seed>>, Error> {
+        let p_type = PlantType::from_str(s_type).unwrap();
+        println!("Getting seeds with type {p_type}");
+        let db = data::open()?;
+        let r = db.r_transaction()?;
+        let seeds: Vec<Seed> = r.scan().primary()?.all()?.try_collect()?;
+        let matching_seeds: Vec<Seed> = seeds.iter().filter(|s| s.plant_type.eq(&p_type)).cloned().collect();
+        match matching_seeds.len() {
+            0 => Ok(None),
+            _ => Ok(Some(matching_seeds))
+        }   
     }
 
     pub fn get_all() -> Result<Vec<Seed>, Error> {

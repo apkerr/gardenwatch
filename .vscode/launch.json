@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["get", "seed"],
+            "args": ["get", "seed", "type", "vegetable"],
             "cwd": "${workspaceFolder}"
         },
         {
