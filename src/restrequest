@@ -1,0 +1,6 @@
+POST http://localhost:9090/seed
+Content-Type: application/json
+
+{
+    "plant_type": "veg"
+}

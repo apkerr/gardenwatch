@@ -1,0 +1,44 @@
+[
+  {
+    "plant_type": "Fruit",
+    "name": "Strawberry",
+    "variety": "Mignonette",
+    "description": "A small everbearing alpine/woodland strawberry with intese flavour",
+    "company": "William Dam",
+    "company_id": "3971A",
+    "start_instructions": "Start indoors 2-3 months before last frost",
+    "germinate_time": "21-28 days",
+    "germinate_temp": "15-18C",
+    "transplant_time": "6 weeks",
+    "final_spacing": "18\"",
+    "harvest_time": "3 - 5 months"
+  },
+  {
+    "plant_type": "Vegetable",
+    "name": "Carrot",
+    "variety": "Orange",
+    "description": "Orange carrot",
+    "company": "William Dam",
+    "company_id": "12345",
+    "start_instructions": "Plant in ground",
+    "germinate_time": "50 days",
+    "germinate_temp": "15",
+    "transplant_time": "Never",
+    "final_spacing": "4 inch",
+    "harvest_time": "75 days"
+  },
+    {
+    "plant_type": "Vegetable",
+    "name": "Carrot",
+    "variety": "Orange",
+    "description": "",
+    "company": "William Dam",
+    "company_id": "12345",
+    "start_instructions": "Plant in ground",
+    "germinate_time": "50 days",
+    "germinate_temp": "15",
+    "transplant_time": "Never",
+    "final_spacing": "4 inch",
+    "harvest_time": "75 days"
+  }
+]
